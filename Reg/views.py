@@ -19,7 +19,7 @@ def Signup(request):
             user.is_active=False
             user.save()
             current_site=get_current_site(request)
-            mail_subject='Activation Your Account'
+            mail_subject='Activate Your Account'
             message=render_to_string(
                'acc_activate_email.html',{
                   'user':user,
