@@ -126,10 +126,6 @@ def activate(request,uidb64,token):
    except(TypeError,ValueError,OverflowError,User.DoesNotExist):
       user=None
    if user is not None and account_activation_token.check_token(user,token):
-      if user.is_activate==True:
-         messages.success(request,'Your account is already activated')
-         return HttpResponseRedirect('/signin/')
-      else:
         user.is_active=True
         user.save()
         messages.success(request,"Your account is activated!!!")
