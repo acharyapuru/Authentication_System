@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse,HttpResponseRedirect
-from Reg.forms import SignupForm,SigninFrom,PassChangeForm,EditAdminProfileForm,EditUserProfileForm
+from Reg.forms import SignupForm,SigninFrom,PassChangeForm,EditAdminProfileForm,EditUserProfileForm,PasswordForgotForm,CustomSetPasswordForm
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.models import User
@@ -10,6 +10,8 @@ from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
 from django.utils.encoding import force_bytes,force_str
 from .tokens import account_activation_token
 from django.core.mail import EmailMessage
+from django.contrib.auth.forms import PasswordResetForm,SetPasswordForm
+
 
 def Signup(request):
     if request.method=="POST":
@@ -35,7 +37,7 @@ def Signup(request):
             )
             email.send()
             messages.success(request,'Account Created Successfully. Please confirm your email address to activate account')
-            return HttpResponseRedirect('signin')
+            return HttpResponseRedirect('/signin/')
             
     else:
         form=SignupForm()
@@ -133,3 +135,54 @@ def activate(request,uidb64,token):
    else:
       return HttpResponse("Activation link is invalid")
       
+
+def password_reset_request(request):
+   if request.method=='POST':
+      form=PasswordForgotForm(request.POST)
+      if form.is_valid():
+         username=form.cleaned_data['username']
+         user=User.objects.filter(username=username).first()
+         if user is not None:
+            subject="Password Reset Request"
+            current_site=get_current_site(request)
+            message=render_to_string('password_reset_email.html',
+            {
+               'user':user,
+               'domain':current_site,
+               'uid':urlsafe_base64_encode(force_bytes(user.pk)),
+               'token':account_activation_token.make_token(user)
+            }
+            )
+            to_email=user.email
+            email=EmailMessage(
+               subject,message,to=[to_email]
+            )
+            email.send()
+            messages.success(request, 'Please check your email for instructions on how to reset your password.')
+            return HttpResponseRedirect('/signin/')
+         else:
+            messages.error(request,'User with this username doesnt exist')
+            return HttpResponseRedirect('/signin/')
+   else:
+      form=PasswordForgotForm()
+   return render(request,'password_reset_request.html',{'form':form})
+            
+def password_reset_confirm(request,uidb64,token):
+   try:
+      uid=force_str(urlsafe_base64_decode(uidb64))
+      user=User.objects.get(pk=uid)
+   except(TypeError,OverflowError,ValueError,User.DoesNotExist):
+      user=None
+   if user is not None and account_activation_token.check_token(user,token):
+      if request.method=="POST":
+         form=CustomSetPasswordForm(user,request.POST)
+         if form.is_valid():
+            form.save()
+            messages.success(request,"Your password has been reset")
+            return HttpResponseRedirect('/signin/')
+      else:
+         form=CustomSetPasswordForm(user)
+      return render(request,'password_reset_confirm.html',{'form':form})
+   else:
+      messages.error(request,"Invalid link")
+      return HttpResponseRedirect('/signin/')

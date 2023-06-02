@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% block title %}SignIn{% endblock title %}
+{% block title %}Login{% endblock title %}
 {% block content %}
  <div class="row justify-content-md-center">
     <div class="col-4">
-        <form action="" method="post">
+        <form action="" method="post" >
             {% csrf_token %}
             {% if messages %}
              {% for message in messages %}
@@ -20,9 +20,18 @@
                 {{field.label_tag}}{{field}}{{field.errors}}
              </div>
             {% endfor %}
+            
             <div class="mt-4">
-                <input type="submit" value="SignIn" class='btn btn-primary btn-lg btn-block'>
-                <a href="{% url 'signup' %}" class='btn btn-success btn-lg btn-block'>SignUp</a>
+                <input type="submit" value="Log In" class='btn btn-primary btn-lg btn-block'>
+            </div>
+            <div class="mt-5">
+                <hr >
+            </div>
+            <div class="mt-5">
+                <a href="{% url 'signup' %}" class='btn btn-success btn-lg btn-block'>Register</a>
+            </div>
+            <div class="text-center mt-4">
+                <a href="{% url 'password_reset_request' %}">Forgotten password?</a>
             </div>
         </form>
     </div>
